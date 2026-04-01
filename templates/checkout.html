@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkout</title>
+<style>
+ body{font-family:Arial,sans-serif;margin:20px;background:#f4f4f4;color:#333}
+.container{max-width:900px;margin:auto;padding:20px;background:#fff;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.1)}
+ label{display:block;margin:10px 0 4px} input,textarea{width:100%;padding:10px;border:1px solid #ccc;border-radius:4px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.right{text-align:right}.btn{padding:10px 14px;border:none;border-radius:4px;cursor:pointer;text-decoration:none;display:inline-block}
+.btn-success{background:#28a745;color:#fff}.btn-outline{border:1px solid #007bff;color:#007bff;background:#fff}
+ table{width:100%;border-collapse:collapse;margin-bottom:12px} th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}
+ a{color:#007bff;text-decoration:none}
+.upi-box{padding:12px;border:1px dashed #aaa;border-radius:6px;background:#fafafa;margin:12px 0}
+ code{background:#f0f0f0;padding:2px 4px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Checkout</h1>
+  <table>
+    <thead><tr><th>Item</th><th>Qty</th><th class="right">Line</th></tr></thead>
+    <tbody>
+      {% for it in items %}
+      <tr><td>{{ it.product.name }}</td><td>{{ it.qty }}</td><td class="right">₹{{ "%.2f"|format(it.line) }}</td></tr>
+      {% endfor %}
+    </tbody>
+    <tfoot><tr><th colspan="2" class="right">Total</th><th class="right">₹{{ "%.2f"|format(total) }}</th></tr></tfoot>
+  </table>
+
+  <div class="upi-box">
+    <strong>Pay via UPI (no gateway):</strong>
+    <div>UPI ID: <code>{{ upi_id }}</code></div>
+    <div style="margin-top:8px;">
+      <a class="btn btn-outline" href="{{ upi_link }}">Open UPI app</a>
+      <span style="margin-left:8px;color:#666;">Amount: ₹{{ "%.2f"|format(total) }}</span>
+    </div>
+    <div style="margin-top:6px;color:#666;font-size:0.9em;">After paying, place the order below (Cash on Delivery is also available).</div>
+  </div>
+
+  <form method="post">
+    <div class="row">
+      <div><label>Full Name</label><input name="name" required></div>
+      <div><label>Phone</label><input name="phone" required></div>
+    </div>
+    <label>Delivery Address</label>
+    <textarea name="address" rows="3" required></textarea>
+    <div class="right" style="margin-top:12px;">
+      <a href="{{ url_for('cart_view') }}">Back to cart</a>
+      <button class="btn btn-success" type="submit">Place Order</button>
+    </div>
+  </form>
+</div>
+</body>
+</html>

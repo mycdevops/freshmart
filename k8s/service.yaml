@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: freshmart
+  namespace: freshmart
+  labels:
+    app: freshmart
+spec:
+  type: ClusterIP
+  selector:
+    app: freshmart
+  ports:
+    - port: 80
+    targetPort: 8000
+    protocol: TCP
+    name: http

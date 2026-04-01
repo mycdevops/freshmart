@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Cart</title>
+<style>
+ body{font-family:Arial,sans-serif;margin:20px;background:#f4f4f4;color:#333}
+.container{max-width:900px;margin:auto;padding:20px;background:#fff;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.1)}
+ table{width:100%;border-collapse:collapse} th,td{padding:10px;border-bottom:1px solid #eee;text-align:left}
+.right{text-align:right}.btn{padding:8px 12px;border:none;border-radius:4px;cursor:pointer}
+.btn-primary{background:#007bff;color:#fff}.btn-danger{background:#dc3545;color:#fff}.btn-success{background:#28a745;color:#fff}
+ input[type=number]{width:60px;padding:6px}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+ a{color:#007bff;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="topbar">
+    <h1>Your Cart</h1>
+    <div><a href="{{ url_for('index') }}">← Continue shopping</a></div>
+  </div>
+  {% if items %}
+  <table>
+    <thead><tr><th>Item</th><th>Price</th><th>Qty</th><th class="right">Line</th><th></th></tr></thead>
+    <tbody>
+      {% for it in items %}
+      <tr>
+        <td>{{ it.product.name }} <small>({{ it.product.unit }})</small></td>
+        <td>₹{{ "%.2f"|format(it.product.price) }}</td>
+        <td>
+          <form action="{{ url_for('cart_update', pid=it.product.id) }}" method="post" style="display:inline;">
+            <input type="number" name="qty" min="0" value="{{ it.qty }}">
+            <button class="btn btn-primary" type="submit">Update</button>
+          </form>
+        </td>
+        <td class="right">₹{{ "%.2f"|format(it.line) }}</td>
+        <td>
+          <form action="{{ url_for('cart_update', pid=it.product.id) }}" method="post" style="display:inline;">
+            <input type="hidden" name="qty" value="0">
+            <button class="btn btn-danger" type="submit">Remove</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr><th colspan="3" class="right">Total</th><th class="right">₹{{ "%.2f"|format(total) }}</th><th></th></tr>
+    </tfoot>
+  </table>
+  <div style="text-align:right;margin-top:15px;">
+    <a class="btn btn-success" href="{{ url_for('checkout') }}">Proceed to Checkout</a>
+  </div>
+  {% else %}
+    <p>Your cart is empty. <a href="{{ url_for('index') }}">Browse products</a>.</p>
+  {% endif %}
+</div>
+</body>
+</html>

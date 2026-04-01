@@ -1,0 +1,182 @@
+
+
+myfreshmarket
+
+#######################
+sudo apt update
+sudo apt upgrade -y
+sudo apt install -y python3-pip python3-venv git nginx
+
+
+#######################
+cd my_fresh_market_app
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+
+#Initialize and populate your database:
+python3 populate_db.py
+
+
+#Step 5.3: Test with Gunicorn
+#Gunicorn is a Python WSGI HTTP Server. It will run our Flask app.
+gunicorn -w 4 app:app -b 0.0.0.0:8000
+
+#Step 5.4: Set up Systemd for Gunicorn
+We want our application to run continuously and start automatically. Create a systemd service file:
+sudo nano /etc/systemd/system/myfreshmarket.service
+
+###### CONTENT ######
+[Unit]
+Description=Gunicorn instance for My Fresh Market app
+After=network.target
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/my_fresh_market_app
+ExecStart=/home/ubuntu/my_fresh_market_app/venv/bin/gunicorn -w 4 app:app -b 127.0.0.1:8000
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+##############################
+Enable and start the service:
+sudo systemctl daemon-reload
+sudo systemctl start myfreshmarket
+sudo systemctl enable myfreshmarket
+
+
+CHECK STATUS
+sudo systemctl status myfreshmarket
+
+##############################
+Step 5.5: Configure Nginx as a Reverse Proxy
+Nginx will serve as the entry point for web requests and forward them to our Gunicorn app.
+sudo nano /etc/nginx/sites-available/myfreshmarket
+
+CONTENT
+========
+server {
+    listen 80;
+    server_name YOUR_EC2_PUBLIC_IP; # Or your domain name if you have one
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+##############################
+Replace YOUR_EC2_PUBLIC_IP with your instance's public IP address.
+
+Enable this Nginx site and restart Nginx:
+
+sudo ln -s /etc/nginx/sites-available/myfreshmarket /etc/nginx/sites-enabled
+sudo nginx -t # Test Nginx configuration for errors
+sudo systemctl restart nginx
+
+###########  FIX  ###################
+sudo nano /etc/systemd/system/myfreshmarket.service
+
+CONTENT
+=======
+[Unit]
+Description=Gunicorn instance for My Fresh Market app
+After=network.target
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/freshmart
+Environment="PATH=/home/ubuntu/freshmart/venv/bin"
+ExecStart=/home/ubuntu/freshmart/venv/bin/gunicorn -w 4 app:app -b 127.0.0.1:8000
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+RELOAD AND RESTART
+===================
+sudo systemctl daemon-reload
+sudo systemctl enable myfreshmarket
+sudo systemctl restart myfreshmarket
+sudo systemctl status myfreshmarket
+
+
+sudo nano /etc/nginx/sites-available/myfreshmarket
+
+CONTENT
+=======
+server {
+    listen 80;
+    server_name _; # replace _ with your public IP or domain if you want
+
+    location / {
+        include proxy_params;
+        proxy_pass http://127.0.0.1:8000;
+    }
+}
+
+#########################
+Make sure it’s linked:
+sudo ln -s /etc/nginx/sites-available/myfreshmarket /etc/nginx/sites-enabled/myfreshmarket 2>/dev/null || true
+
+
+TEST AND RELOAD
+sudo nginx -t
+sudo systemctl restart nginx
+
+
+RESTART AND CHECK
+sudo systemctl restart myfreshmarket
+sudo systemctl restart nginx
+
+How to apply - On your EC2:
+cd ~/freshmart
+source venv/bin/activate
+python3 populate_db.py
+sudo systemctl restart myfreshmarket
+
+
+again apply the changes
+========================
+cd ~/freshmart
+source venv/bin/activate
+# re-init DB with new schema + sample data (this will wipe old products.db)
+python3 populate_db.py
+sudo systemctl restart myfreshmarket
+
+
+ENVIRONMENT AFTER ALL THE APP SETUP
+===================================
+export FLASK_SECRET="change-me"
+export ADMIN_PASSWORD="your-strong-password"
+export UPI_ID="yourname@upi"
+export UPI_NAME="My Fresh Market"
+
+REPOPULATE THE CATEGORIES
+=========================
+cd ~/freshmart
+source venv/bin/activate
+python3 populate_db.py # use the last “fixed pictures” version (picsum) or the white-bg one
+sudo systemctl restart myfreshmarket
+
+
+
+AFTER KUBERNETES FILES
+=======================
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/secret.yaml
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+kubectl apply -f k8s/ingress.yaml
+
+kubectl -n freshmart get pods -w
+# wait until 2/2 READY, then:
+kubectl -n freshmart get svc,ingress

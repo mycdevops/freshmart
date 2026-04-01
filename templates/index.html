@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Fresh Market</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background:#f4f4f4; color:#333; }
+       .container { max-width: 1200px; margin: auto; padding: 20px; background:#fff; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,.1); }
+        h1 { color:#28a745; text-align:center; margin-bottom:10px; }
+       .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+       .topbar a { color:#007bff; text-decoration:none; font-weight:bold; margin-left:12px; }
+       .filters { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:center; margin-bottom:14px; }
+       .chip { padding:6px 10px; border:1px solid #ddd; border-radius:20px; background:#fafafa; cursor:pointer; text-decoration:none; color:#333; }
+       .chip.active { background:#28a745; color:#fff; border-color:#28a745; }
+       .search-bar { text-align:center; margin-bottom:16px; }
+       .search-bar input[type="text"],.search-bar input[type="number"] { padding:10px; border:1px solid #ccc; border-radius:4px; font-size:14px; }
+       .search-bar input[type="text"] { width: 50%; max-width: 420px; }
+       .search-bar button { padding:10px 14px; background:#007bff; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:14px; margin-left:8px; }
+       .product-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:16px; }
+       .product-card { background:#fff; border:1px solid #ddd; border-radius:8px; padding:14px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+       .product-card img { max-width:100%; height:170px; object-fit:contain; background:#fafafa; border-radius:4px; }
+       .product-card h2 { font-size:1.05em; margin:10px 0 6px; }
+       .product-card p { font-size:.9em; color:#666; min-height:36px; }
+       .price { font-weight:bold; color:#28a745; margin:6px 0 10px; }
+       .product-card button { padding:8px 12px; background:#28a745; color:#fff; border:none; border-radius:4px; cursor:pointer; }
+       .muted { color:#777; font-size:.9em; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Welcome to My Fresh Market!</h1>
+    <div class="topbar">
+        <div class="muted">Fast, fresh, local.</div>
+        <div>
+            <a href="{{ url_for('admin_home') }}">Admin</a>
+            <a href="{{ url_for('cart_view') }}">🛒 Cart ({{ cart_count or 0 }})</a>
+        </div>
+    </div>
+
+    <div class="filters">
+        <a class="chip {% if not active_cat %}active{% endif %}" href="{{ url_for('index', q=search_query, min=min_price, max=max_price) }}">All</a>
+        {% for c in categories %}
+            <a class="chip {% if active_cat==c %}active{% endif %}" href="{{ url_for('index', q=search_query, cat=c, min=min_price, max=max_price) }}">{{ c }}</a>
+        {% endfor %}
+    </div>
+
+    <div class="search-bar">
+        <form action="{{ url_for('index') }}" method="get">
+            <input type="text" name="q" placeholder="Search for groceries..." value="{{ search_query or '' }}">
+            <input type="number" step="0.01" min="0" name="min" placeholder="Min ₹" value="{{ min_price or '' }}" style="width:110px;">
+            <input type="number" step="0.01" min="0" name="max" placeholder="Max ₹" value="{{ max_price or '' }}" style="width:110px;">
+            {% if active_cat %}<input type="hidden" name="cat" value="{{ active_cat }}">{% endif %}
+            <button type="submit">Apply</button>
+        </form>
+    </div>
+
+    {% if products %}
+    <div class="product-grid">
+        {% for product in products %}
+        <div class="product-card">
+            <img src="{{ product.image_url }}" alt="{{ product.name }}">
+            <h2>{{ product.name }}</h2>
+            <p>{{ product.description }}</p>
+            <div class="price">₹{{ "%.2f"|format(product.price) }} / {{ product.unit }}</div>
+            <div class="muted">{{ product.category }}</div>
+            <form action="{{ url_for('cart_add', pid=product.id) }}" method="post">
+                <button type="submit">Add to cart</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+        <p style="text-align:center;color:#d33;">No products found. Try clearing filters.</p>
+    {% endif %}
+</div>
+</body>
+</html>
